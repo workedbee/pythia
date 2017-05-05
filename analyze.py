@@ -1,4 +1,4 @@
-from enrich import WIN_STATE, DRAW_STATE, LOSE_STATE
+from enrich import GameResult
 
 def logMatrix(filename, matrix):
     with open(filename, 'w') as file:
@@ -35,13 +35,13 @@ def getNextGames(firstGame, teamInfo, games):
 
 def getProbabilty(team, game, type, teamInfos):
     winA, winB, draw = getGameOutcome(teamInfos[game["teamA"]], teamInfos[game["teamB"]])
-    if team == game["teamA"] and type == WIN_STATE["toString"]:
+    if team == game["teamA"] and type == GameResult.WIN:
         return winA
-    if team == game["teamB"] and type == WIN_STATE["toString"]:
+    if team == game["teamB"] and type == GameResult.WIN:
         return winB
-    if team == game["teamA"] and type == LOSE_STATE["toString"]:
+    if team == game["teamA"] and type == GameResult.LOSE:
         return winB
-    if team == game["teamB"] and type == LOSE_STATE["toString"]:
+    if team == game["teamB"] and type == GameResult.LOSE:
         return winA
 
 def covertCombinationToCoefficients(value, result_length, divider):
@@ -91,7 +91,7 @@ def getRegressionParameters(start_coeff, x_columns, y, precision):
 
 def calculatePredictedLength_0(seria, teamInfos, games):
     type = seria["type"]
-    if type == DRAW_STATE["toString"]:
+    if type == GameResult.DRAW:
         return 0
 
     team = seria["team"]
@@ -113,7 +113,7 @@ def calculatePredictedLength_0(seria, teamInfos, games):
         if seriaProbability*length < 0.10:
             break
 
-    if type == LOSE_STATE["toString"]:
+    if type == GameResult.LOSE:
         averageLength = -averageLength
 
     return averageLength
@@ -121,7 +121,7 @@ def calculatePredictedLength_0(seria, teamInfos, games):
 
 def calculatePredictedLength_1(seria, teamInfos, games):
     type = seria["type"]
-    if type == DRAW_STATE["toString"]:
+    if type == GameResult.DRAW:
         return 0
 
     team = seria["team"]
@@ -138,14 +138,14 @@ def calculatePredictedLength_1(seria, teamInfos, games):
         opponentTeam = game["teamA"] if team != game["teamA"] else game["teamB"]
         opponentProbability = getProbabilty(opponentTeam, game, type, teamInfos)
 
-        if type == WIN_STATE["toString"] and probability < opponentProbability:
+        if type == GameResult.WIN and probability < opponentProbability:
             break
-        if type == LOSE_STATE["toString"] and probability > opponentProbability:
+        if type == GameResult.LOSE and probability > opponentProbability:
             break
 
         length = length + 1
 
-    if type == LOSE_STATE["toString"]:
+    if type == GameResult.LOSE:
         length = -length
 
     return length
@@ -155,13 +155,13 @@ def printSeriesStatistics(series):
     maxDraw = 0
     maxLose = 0
     for seria in series:
-        if seria["type"] == WIN_STATE["toString"]:
+        if seria["type"] == GameResult.WIN:
             if len(seria["games"]) > maxWin:
                 maxWin = len(seria["games"])
-        if seria["type"] == DRAW_STATE["toString"]:
+        if seria["type"] == GameResult.DRAW:
             if len(seria["games"]) > maxDraw:
                 maxDraw = len(seria["games"])
-        if seria["type"] == LOSE_STATE["toString"]:
+        if seria["type"] == GameResult.LOSE:
             if len(seria["games"]) > maxLose:
                 maxLose = len(seria["games"])
     print 'WIN/DRAW/LOSE: {}/{}/{}'.format(maxWin, maxDraw, maxLose)
