@@ -7,7 +7,7 @@ from sklearn import linear_model
 
 import analyze
 from analyze import logColumns
-from enrich import WIN_STATE, DRAW_STATE, LOSE_STATE
+from enrich import GameResult
 from enrich import extract_teams, generate_statistics_by_team, enrich_by_series, enrich_games, enrichCoeff
 from http import load_html_page
 from parse import parse_sports_ru_html, parse_liga_stavok_html
@@ -124,7 +124,7 @@ def printForecastedBets(series, games, teamInfos):
             extension = '{:.3f}/{:.3f}/{:.3f}'.format(win, draw, lose)
             analyze.printGame(game, extension)
 
-        if seria["type"] == DRAW_STATE["toString"]:
+        if seria["type"] == GameResult.DRAW:
             print "(-) NO BETS: DRAW SERIA"
         else:
             if pointsPerGame < 0.725 or pointsPerGame > 1.3:
@@ -184,7 +184,7 @@ def getRegressionCoeffs(teamIndexes, seriaTypes, teamToIndex, games, series, tea
         predictedLength = analyze.calculatePredictedLength_0(seria, teamInfos, games)
         predictedLengths.append(predictedLength)
 
-        length = len(seria["games"]) if seria["type"] == WIN_STATE["toString"] else -len(seria["games"])
+        length = len(seria["games"]) if seria["type"] == GameResult.WIN else -len(seria["games"])
         y.append(length)
 
         sign = -1 if length < 0 else 1
@@ -232,7 +232,7 @@ def investigate1(teams, games, series, teamInfos):
         # print u'{}. {}'.format(index, team)
         index += 1
 
-    for state in [WIN_STATE, LOSE_STATE]:
+    for state in [GameResult.WIN, GameResult.LOSE]:
         complex_team_indexes = set()
         results = list()
         for teamA in teams:
@@ -252,7 +252,7 @@ def investigate1(teams, games, series, teamInfos):
                     continue
                 complex_team_indexes.add(complex_team_index)
 
-                regression_coeffs, percent = getRegressionCoeffs([team_a_index, team_b_index], [state["toString"]],
+                regression_coeffs, percent = getRegressionCoeffs([team_a_index, team_b_index], [state],
                                                         teamToIndex, games, series, teamInfos)
 
                 results.append({
@@ -262,7 +262,7 @@ def investigate1(teams, games, series, teamInfos):
                     "coeffs": regression_coeffs
                 })
 
-        print '----==== {} ====----'.format(state["toString"])
+        print '----==== {} ====----'.format(state)
         # results = sorted(results, key=lambda x:x["percent"], reverse=True)
         # for index in range(0, len(results)):
         #     result = results[index]
@@ -294,7 +294,7 @@ def investigate1(teams, games, series, teamInfos):
         full_matched_series = 0
         for value in results:
             if value["percent"] > 0.72:
-                matched_series, series_count = get_production_percent(games, value["team"], teamInfos, state["toString"], value["coeffs"])
+                matched_series, series_count = get_production_percent(games, value["team"], teamInfos, state, value["coeffs"])
                 if series_count != 0:
                     prod_percent = 1.0*matched_series/series_count
                 else:
@@ -330,7 +330,7 @@ def get_production_percent(games, team_name, team_infos, seria_state, coeff):
         x = [points_per_game, draw_per_game, predicted_length]
         regression_length = x[0]*coeff[0] + x[1]*coeff[1] + x[2]*coeff[2]
 
-        length = len(seria["games"]) if seria["type"] == WIN_STATE["toString"] else -len(seria["games"])
+        length = len(seria["games"]) if seria["type"] == GameResult.WIN else -len(seria["games"])
         matched_series += 1.0 if modulus(length - round(regression_length)) == 0 else 0
         series_count += 1.0
 
@@ -405,9 +405,9 @@ def investigate0(teams, games, series, teamInfos):
     for seriaIndex in range(0, len(series)):
         seria = series[seriaIndex]
 
-        if seria["type"] == DRAW_STATE["toString"]:
+        if seria["type"] == GameResult.DRAW:
             continue
-        if seria["type"] == LOSE_STATE["toString"]:
+        if seria["type"] == GameResult.LOSE:
             continue
 
         teamName = seria["team"]
@@ -448,7 +448,7 @@ def investigate0(teams, games, series, teamInfos):
         groupScores1.append(gs1)
         groupScores2.append(gs2)
 
-        length = len(seria["games"]) if seria["type"] == WIN_STATE["toString"] else -len(seria["games"])
+        length = len(seria["games"]) if seria["type"] == GameResult.WIN else -len(seria["games"])
 
         y.append(length)
 

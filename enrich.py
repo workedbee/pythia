@@ -1,8 +1,11 @@
 import copy
+from enum import Enum
 
-WIN_STATE = {"state": 0, "toString": "WIN"}
-LOSE_STATE = {"state": 1, "toString": "LOSE"}
-DRAW_STATE = {"state": 2, "toString": "DRAW"}
+
+class GameResult(Enum):
+    WIN = 0
+    LOSE = 1
+    DRAW = 2
 
 def hyperbole(x):
     return 1.0/x if x != 0 else 0.
@@ -81,7 +84,7 @@ def appendSeria(serias, teamName, games, state):
     if len(games) != 0:
         serias.append({
             "team": teamName,
-            "type": state["toString"],
+            "type": state,
             "games": copy.copy(games)
         })
 
@@ -93,19 +96,19 @@ def enrich_by_series(statistics_by_team, games):
         teamGames = filterGamesByTeam(team, games)
 
         currentSeria = list()
-        currentState = DRAW_STATE
+        currentState = GameResult.DRAW
         team_statistics["series"] = list()
         team_statistics["incomplete_seria"] = None
 
         for game in teamGames:
-            gameState = DRAW_STATE
+            gameState = GameResult.DRAW
             if not game["overtime"]:
                 if game["winner"] == team:
-                    gameState = WIN_STATE
+                    gameState = GameResult.WIN
                 else:
-                    gameState = LOSE_STATE
+                    gameState = GameResult.LOSE
 
-            if currentState["state"] != gameState["state"]:
+            if currentState != gameState:
                 appendSeria(team_statistics["series"], team, currentSeria, currentState)
                 del currentSeria[:]
 
@@ -114,6 +117,6 @@ def enrich_by_series(statistics_by_team, games):
 
         team_statistics["incomplete_seria"] = {
             "team": team,
-            "type": currentState["toString"],
+            "type": currentState,
             "games": copy.copy(currentSeria)
         }
