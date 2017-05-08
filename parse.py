@@ -1,5 +1,6 @@
 import json
 import locale
+import datetime
 
 
 def get_team_convertor(file_name):
@@ -161,3 +162,66 @@ def findOverTime(data, begIndex, endIndex):
         return True
     else:
         return False
+
+
+def parse_leon_team_draft(draft):
+    draft = draft.replace('\r\n', '')
+
+    parts = draft.split(' - ')
+    if len(parts) < 2:
+        return False, '', ''
+    return True, parts[0].strip(), parts[1].strip()
+
+
+def parse_leon_id_draft(draft):
+    return draft.replace('https://www.leon.ru/betevent/', '')
+
+
+def parse_leon_date_draft(draft):
+    time_ms = long(draft)
+    return str(datetime.datetime.fromtimestamp(time_ms/1000.0))
+
+def parse_leon_bet_html(data):
+    locale.setlocale(locale.LC_ALL, 'RUS')
+
+    whole_start_sequence = 'table border="0" cellspacing="1"'
+    whole_stop_sequence = '<div class="betoffer-hint text-wrapper sport-desc">'
+
+    whole_start_index = data.find(whole_start_sequence)
+    whole_stop_index = data.find(whole_stop_sequence)
+
+    data = data[whole_start_index: whole_stop_index]
+
+    games = list()
+
+    index = 0
+    while True:
+        time_draft, index = parseData(data, index, '<td class="centerTxt liveeventTime"><span><script>printShortDate(', ')</script></span></td>')
+        id_draft, index = parseData(data, index, '<a href="', '" ')
+        teams_draft, index = parseData(data, index, 'class="nou2">', '</a>')
+        winA, index = parseData(data, index, "><strong>", "</strong></a>")
+        draw, index = parseData(data, index, "><strong>", "</strong></a>")
+        winB, index = parseData(data, index, "><strong>", "</strong></a>")
+
+        if index == -1:
+            break
+        result, teamA, teamB = parse_leon_team_draft(teams_draft)
+        if not result:
+            continue
+
+        id = parse_leon_id_draft(id_draft)
+
+        date = parse_leon_date_draft(time_draft)
+
+        games.append({
+            "game_id": id,
+            "date": date,
+            "teamA": teamA.decode("utf-8"),
+            "teamB": teamB.decode("utf-8"),
+            "odds": [{ "winA": float(winA.replace('\r\n', '').replace(' ', '')),
+                      "draw": float(draw.replace('\r\n', '').replace(' ', '')),
+                      "winB": float(winB.replace('\r\n', '').replace(' ', ''))
+                      }]
+        })
+
+    return games
