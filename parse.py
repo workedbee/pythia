@@ -181,7 +181,7 @@ def parse_leon_date_draft(draft):
     time_ms = long(draft)
     return str(datetime.datetime.fromtimestamp(time_ms/1000.0))
 
-def parse_leon_bet_html(data):
+def parse_leon_bet_html(current_datetime, data):
     locale.setlocale(locale.LC_ALL, 'RUS')
 
     whole_start_sequence = 'table border="0" cellspacing="1"'
@@ -214,14 +214,16 @@ def parse_leon_bet_html(data):
         date = parse_leon_date_draft(time_draft)
 
         games.append({
-            "game_id": id,
+            "id": id,
             "date": date,
             "teamA": teamA.decode("utf-8"),
             "teamB": teamB.decode("utf-8"),
-            "odds": [{ "winA": float(winA.replace('\r\n', '').replace(' ', '')),
-                      "draw": float(draw.replace('\r\n', '').replace(' ', '')),
-                      "winB": float(winB.replace('\r\n', '').replace(' ', ''))
-                      }]
+            "odds": [{
+                "time": current_datetime,
+                "winA": float(winA.replace('\r\n', '').replace(' ', '')),
+                "draw": float(draw.replace('\r\n', '').replace(' ', '')),
+                "winB": float(winB.replace('\r\n', '').replace(' ', ''))
+            }]
         })
 
     return games
