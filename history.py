@@ -56,7 +56,7 @@ def get_time():
 
 def print_history(history):
     for game in history:
-        text = u'{}: {} - {}'.format(game['date'], game['teamA'], game['teamB'])
+        text = u'{} ({}): {} - {}'.format(game['date'], game['id'], game['teamA'], game['teamB'])
         print text.encode('utf-8')
         for odd in game["odds"]:
             print '\t{}: {:0.2f} / {:0.2f} / {:0.2f}'.format(odd['time'], odd['winA'], odd['draw'], odd['winB'])

@@ -169,7 +169,7 @@ def printSeriesStatistics(series):
 
 def printGame(game, extension = ""):
     overtime = "OT" if game["overtime"] else ""
-    print u"{}. {}:{} {} {} - {} {}".format(game["index"], game["scoreA"], game["scoreB"], overtime, game["teamA"], game["teamB"], extension)
+    print u"{}. {} {}:{} {} {} - {} {}".format(game["index"], game["date"], game["scoreA"], game["scoreB"], overtime, game["teamA"], game["teamB"], extension)
 
 def getGameOutcome(teamA, teamB):
     HOME_ADVANTAGE = 0.07

@@ -15,6 +15,13 @@ from parse import parse_sports_ru_html, parse_liga_stavok_html
 work_directory = path.dirname(path.abspath(__file__))
 
 
+def print_team_statistic(team_statistic):
+    index = 0
+    for ts in team_statistic:
+        index += 1
+        print u"{}. {} - {}".format(index, ts['name'], float(ts['score'])/len(ts['games']))
+
+
 def main():
     locale.setlocale(locale.LC_ALL, 'RUS')
 
@@ -28,36 +35,70 @@ def main():
     statistics_by_team = generate_statistics_by_team(teams, games)
     enrich_by_series(statistics_by_team, games)
 
-    all_teams_statistics = sorted(statistics_by_team.values(), key=lambda x:x["score"], reverse=True)
+    all_teams_statistics = sorted(statistics_by_team.values(), key=lambda x: x["score"], reverse=True)
+    print_team_statistic(all_teams_statistics)
 
-    series = list()
-    for team_statistics in all_teams_statistics:
-        [series.append(seria) for seria in team_statistics["series"]]
+    investigate_suspicious(games, statistics_by_team)
 
-    incomplete_series = list()
-    for team_statistics in all_teams_statistics:
-        incomplete_series.append(team_statistics["incomplete_seria"])
 
-    series = sorted(series, key=lambda x: x["games"][0], reverse=False)
-    incomplete_series = sorted(incomplete_series, key=lambda x: x["games"][0], reverse=False)
+    #
+    # series = list()
+    # for team_statistics in all_teams_statistics:
+    #     [series.append(seria) for seria in team_statistics["series"]]
+    #
+    # incomplete_series = list()
+    # for team_statistics in all_teams_statistics:
+    #     incomplete_series.append(team_statistics["incomplete_seria"])
+    #
+    # series = sorted(series, key=lambda x: x["games"][0], reverse=False)
+    # incomplete_series = sorted(incomplete_series, key=lambda x: x["games"][0], reverse=False)
+    #
+    # #investigate0(teams, games, series, statistics_by_team)
+    # investigate1(teams, games, series, statistics_by_team)
 
-    #investigate0(teams, games, series, statistics_by_team)
-    investigate1(teams, games, series, statistics_by_team)
+def investigate_suspicious(games, statistics_by_team):
+    print
+    print "---== Total Games Count: {} ==---".format(len(games))
+    threshold = .5
+    for game in games:
+        team_a = game['teamA']
+        team_b = game['teamB']
+        score_a = calc_score(team_a, statistics_by_team)
+        score_b = calc_score(team_b, statistics_by_team)
+        diff = score_a - score_b
+        # analyze.printGame(game)
+        # print diff
+        if (diff > threshold or diff < -threshold) and game['overtime']:
+            analyze.printGame(game, "{0:.3f}".format(diff))
+            continue
+        if (diff > threshold) and game['scoreA'] < game['scoreB']:
+            analyze.printGame(game, "{0:.3f}".format(diff))
+        if (diff < -threshold) and game['scoreA'] > game['scoreB']:
+            analyze.printGame(game, "{0:.3f}".format(diff))
+
+
+
+
+def calc_score(team, statistics_by_team):
+    statistics = statistics_by_team[team]
+    return float(statistics['score']) / len(statistics['games'])
+
 
 def load():
-    khl_2016_season_id = '5735'
+    #khl_2016_season_id = '5735'
+    khl_2017_season_id = '6449'
     #khl_2016_season_id = '5736'
     #khl_2016_season_id = '5547'
 
     game_index = 0
     games = list()
     #months = [8, 9, 10, 11, 12, 1, 2]
-    months = [8, 9, 10, 11, ]
+    months = [8, 9, 10, 11]
     #months = [10, 11, 12, 1, 2, 3, 4]
     try:
         for month in months:
             parameters = {
-                "s": khl_2016_season_id,
+                "s": khl_2017_season_id,
                 "m": str(month)
             }
             data = load_html_page("https://www.sports.ru/khl/calendar/", parameters)
@@ -577,7 +618,7 @@ def processSeria(seria, games, teamInfos, predicted, spendings, profit):
         return profit + PROFIT
 
 
-def loadGames(filename):
+def load_games(filename):
     with open(filename, 'r') as rawFile:
         gamesData = rawFile.read().replace('\n', '')
 
