@@ -1,11 +1,11 @@
+import datetime
 import json
 import locale
-import datetime
-from os.path import join, isfile
 from os import path, listdir
-from http import load_html_page
-from parse import parse_leon_bet_html
+from os.path import join, isfile
 
+from http import load_html_page
+from parse.parse import parse_leon_bet_html
 
 script_directory = path.dirname(path.abspath(__file__))
 

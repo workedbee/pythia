@@ -7,17 +7,20 @@ class GameResult(Enum):
     LOSE = 1
     DRAW = 2
 
+
 def hyperbole(x):
     return 1.0/x if x != 0 else 0.
 
 
-def enrichCoeff(gamesWithCoeff):
-    for game in gamesWithCoeff:
-        winA = hyperbole(game['winA'])
-        winB = hyperbole(game['winB'])
-        draw = hyperbole(game['draw'])
-        game['winAX'] = hyperbole(winA + draw)
-        game['winBX'] = hyperbole(winB + draw)
+def enrich_odds(games_with_odds):
+    for game in games_with_odds:
+        for odd in game["odds"]:
+            winA = hyperbole(odd['winA'])
+            winB = hyperbole(odd['winB'])
+            draw = hyperbole(odd['draw'])
+            odd['winAX'] = hyperbole(winA + draw)
+            odd['winBX'] = hyperbole(winB + draw)
+    return games_with_odds
 
 
 def enrich_games(games):
