@@ -1,5 +1,6 @@
 import json
 import locale
+import os
 from os import path
 
 import numpy as np
@@ -8,11 +9,15 @@ from sklearn import linear_model
 import analyze
 from analyze import logColumns
 from enrich import GameResult
-from enrich import extract_teams, generate_statistics_by_team, enrich_by_series, enrich_games, enrichCoeff
+from enrich import enrich_odds
+from games import load, split_games
 from http import load_html_page
-from parse import parse_sports_ru_html, parse_liga_stavok_html
+from merge import print_list_to_file
+from parse.marathon_bet_ru import parse_bet_html
+from parse.parse import parse_liga_stavok_html
 
 work_directory = path.dirname(path.abspath(__file__))
+games_directory = path.join(work_directory, "games")
 
 
 def print_team_statistic(team_statistic):
@@ -26,22 +31,26 @@ def main():
     locale.setlocale(locale.LC_ALL, 'RUS')
 
     all_games = load()
-    last_games, future_games = split_games(all_games)
+    past_games, future_games = split_games(all_games)
 
-    games = last_games
-    games = enrich_games(games)
-    teams = extract_teams(games)
+    games = past_games
+    odds = get_marathon_odds()
 
-    statistics_by_team = generate_statistics_by_team(teams, games)
-    enrich_by_series(statistics_by_team, games)
-
-    all_teams_statistics = sorted(statistics_by_team.values(), key=lambda x: x["score"], reverse=True)
-    print_team_statistic(all_teams_statistics)
-
-    investigate_suspicious(games, statistics_by_team)
-
-
+    k = 0
+    # games = enrich_games(games)
+    # teams = extract_teams(games)
     #
+    # statistics_by_team = generate_statistics_by_team(teams, games)
+    # enrich_by_series(statistics_by_team, games)
+    #
+    # all_teams_statistics = sorted(statistics_by_team.values(), key=lambda x: x["score"], reverse=True)
+    # print_team_statistic(all_teams_statistics)
+    #
+    # odds = load_odds()
+    # aliases = load_aliases(path.join(work_directory, 'data\\team_aliases.json'))
+    #
+    # investigate_suspicious2(games, odds, aliases)
+
     # series = list()
     # for team_statistics in all_teams_statistics:
     #     [series.append(seria) for seria in team_statistics["series"]]
@@ -55,6 +64,126 @@ def main():
     #
     # #investigate0(teams, games, series, statistics_by_team)
     # investigate1(teams, games, series, statistics_by_team)
+
+
+def get_marathon_odds():
+    data = load_html_page("https://www.marathonbet.ru/su/popular/Ice+Hockey/KHL/", {})
+    odds = parse_bet_html(data)
+    return enrich_odds(odds)
+
+
+def load_aliases(filename):
+    with open(filename, 'r') as raw_file:
+        aliases_data = raw_file.read().replace('\n', '')
+
+    json_aliases = json.loads(aliases_data)
+
+    aliases = dict()
+    for alias in json_aliases:
+        aliases[alias["name"]] = alias["alias"]
+    return aliases
+
+
+def print_teams(teams):
+    sorted_teams = sorted(teams)
+    for team in sorted_teams:
+        print u'{' + u'"name":"{}", "alias": ""'.format(team) + u'},'
+
+
+def investigate_suspicious2(games, odds, aliases):
+    print
+    print "---== Total Games Count: {} ==---".format(len(games))
+    counter = 0
+    for game in games:
+        try:
+            game_signature = build_game_signature(game, aliases)
+            odd = find_odd(odds, aliases, game_signature)
+            game_suspicious = is_game_suspicious(game, odd, 2.5)
+            if game_suspicious != "suspicious_none":
+                print u"{} {} - {}".format(game["date"], game['teamA'], game['teamB'])
+                date = game["date"].replace('.', '_')
+
+                filename = ""
+                probabilities = list()
+                alias_a = aliases[game['teamA']].replace(' ', '_')
+                alias_b = aliases[game['teamB']].replace(' ', '_')
+                if game_suspicious == "suspicious_A":
+                    filename = u"{}_{}_{}_a.txt".format(date, alias_a, alias_b)
+                    [probabilities.append(x["probA"]) for x in odd["odds"]]
+                elif game_suspicious == "suspicious_B":
+                    filename = u"{}_{}_{}_b.txt".format(date, alias_a, alias_b)
+                    [probabilities.append(x["probB"]) for x in odd["odds"]]
+
+                file_path = os.path.join(games_directory, filename)
+                print_list_to_file(file_path, probabilities)
+                counter += 1
+
+        except Exception as ex:
+            i = 0
+            # print ex.args[0]
+
+
+def is_game_suspicious(game, odd, threshold):
+    team_a_xw = 0
+    team_b_xw = 0
+    for item in odd["odds"]:
+        prob_a_xw = item["probA"] + item["probDraw"]
+        item_a_xw = 1./prob_a_xw if prob_a_xw != 0 else 0.
+        team_a_xw = item_a_xw if item_a_xw > team_a_xw else team_a_xw
+
+        prob_b_xw = item["probB"] + item["probDraw"]
+        item_b_xw = 1./prob_b_xw if prob_b_xw != 0 else 0.
+        team_b_xw = item_b_xw if item_b_xw > team_b_xw else team_b_xw
+
+    if game["overtime"]:
+        if team_a_xw > threshold:
+            return "suspicious_A"
+        if team_b_xw > threshold:
+            return "suspicious_B"
+
+    if team_a_xw > threshold and game["scoreA"] > game["scoreB"]:
+        return "suspicious_A"
+
+    if team_b_xw > threshold and game["scoreA"] < game["scoreB"]:
+        return "suspicious_B"
+
+    return "suspicious_none"
+
+
+def find_odd(odds, aliases, game_signature):
+    for odd in odds:
+        odd_signature = build_odd_signature(odd, aliases)
+        if game_signature == odd_signature:
+            return odd
+
+    raise Exception("No odd found for game signature '{}'".format(game_signature))
+
+
+def build_odd_signature(odd, aliases):
+    team_a = odd['teamA']
+    team_b = odd['teamB']
+    alias_a = aliases[team_a]
+    alias_b = aliases[team_b]
+    date = format_odd_date(odd['date'])
+
+    return "{}_{}_{}".format(alias_a, alias_b, date)
+
+
+def format_odd_date(date):
+    parts = date.split(' ')
+    parts = parts[0].split('-')
+    return "{}.{}.{}".format(parts[2], parts[1], parts[0])
+
+
+def build_game_signature(game, aliases):
+    team_a = game['teamA']
+    team_b = game['teamB']
+    alias_a = aliases[team_a]
+    alias_b = aliases[team_b]
+    date = game['date']
+
+    return "{}_{}_{}".format(alias_a, alias_b, date)
+
 
 def investigate_suspicious(games, statistics_by_team):
     print
@@ -77,51 +206,10 @@ def investigate_suspicious(games, statistics_by_team):
             analyze.printGame(game, "{0:.3f}".format(diff))
 
 
-
-
 def calc_score(team, statistics_by_team):
     statistics = statistics_by_team[team]
     return float(statistics['score']) / len(statistics['games'])
 
-
-def load():
-    #khl_2016_season_id = '5735'
-    khl_2017_season_id = '6449'
-    #khl_2016_season_id = '5736'
-    #khl_2016_season_id = '5547'
-
-    game_index = 0
-    games = list()
-    #months = [8, 9, 10, 11, 12, 1, 2]
-    months = [8, 9, 10, 11]
-    #months = [10, 11, 12, 1, 2, 3, 4]
-    try:
-        for month in months:
-            parameters = {
-                "s": khl_2017_season_id,
-                "m": str(month)
-            }
-            data = load_html_page("https://www.sports.ru/khl/calendar/", parameters)
-            games_portion = parse_sports_ru_html(data, game_index)
-            games.extend(games_portion)
-            game_index += len(games_portion)
-
-    except Exception as e:
-        print "KeyError Encounter - missing JSON object from the response : {}".format(e)
-        print "Response returned from the server"
-
-    return games
-
-def split_games(games):
-    last_games = list()
-    future_games = list()
-    for game in games:
-        if '-' in game["scoreA"]:
-            future_games.append(game)
-        else:
-            last_games.append(game)
-
-    return last_games, future_games
 
 def vectorsScalarMultiplication(vec0, vec1):
     length = len(vec0) if len(vec0) > len(vec1) else len(vec1)
@@ -194,7 +282,7 @@ def get_liga_stavok_coeff():
     }
     data = load_html_page("https://www.ligastavok.ru/Topics/Ice-Hockey/t", parameters)
     coeffs = parse_liga_stavok_html(data)
-    return enrichCoeff(coeffs)
+    return enrich_odds(coeffs)
 
 def getRegressionCoeffs(teamIndexes, seriaTypes, teamToIndex, games, series, teamInfos):
     teamScores = list()

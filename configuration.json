@@ -1,6 +1,16 @@
 [
-{
-"id" : "khl regular",
-"url": "https://www.leon.ru/betoffer/10000004/673"
-}
+  {
+    "id" : "khl regular",
+    "url": "https://www.leon.ru/betoffer/10000004/673"
+  },
+  {
+    "id" : "khl marathon",
+    "url": "https://www.marathonbet.ru/su/popular/Ice+Hockey/KHL",
+    "database": "marathon_khl.json"
+  },
+  {
+    "id" : "nhl marathon",
+    "url": "https://www.marathonbet.ru/su/betting/Ice+Hockey/NHL",
+    "database": "marathon_nhl.json"
+  }
 ]

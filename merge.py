@@ -28,6 +28,9 @@ def load_odds():
     index = 0
     games = sorted(games, key=lambda game: game['date'])
 
+    teams = find_teams(games)
+    print_teams(teams)
+
     for game in games:
         index += 1
         odds = game['odds']
@@ -43,26 +46,41 @@ def load_odds():
             odd['probDraw'] = 1./odd['draw'] if odd['draw'] != 0. else 0.0
             prob_d.append("{0:.3f}".format(odd['probDraw']))
 
-        date = game["date"].split(' ')[0]
-        date = date.replace('-', '_')
-        print u"{} {} - {}".format(date, game['teamA'], game['teamB'])
-
-        filename = u"{}_{}_{}_a.txt".format(date, game['teamA'], game['teamB'])
-        file_path = os.path.join(games_directory, filename)
-        print_to_file(file_path, prob_a)
-
-        filename = u"{}_{}_{}_b.txt".format(date, game['teamA'], game['teamB'])
-        file_path = os.path.join(games_directory, filename)
-        print_to_file(file_path, prob_b)
-
-        filename = u"{}_{}_{}_d.txt".format(date, game['teamA'], game['teamB'])
-        file_path = os.path.join(games_directory, filename)
-        print_to_file(file_path, prob_d)
+        # date = game["date"].split(' ')[0]
+        # date = date.replace('-', '_')
+        # print u"{} {} - {}".format(date, game['teamA'], game['teamB'])
+        #
+        # filename = u"{}_{}_{}_a.txt".format(date, game['teamA'], game['teamB'])
+        # file_path = os.path.join(games_directory, filename)
+        # print_list_to_file(file_path, prob_a)
+        #
+        # filename = u"{}_{}_{}_b.txt".format(date, game['teamA'], game['teamB'])
+        # file_path = os.path.join(games_directory, filename)
+        # print_list_to_file(file_path, prob_b)
+        #
+        # filename = u"{}_{}_{}_d.txt".format(date, game['teamA'], game['teamB'])
+        # file_path = os.path.join(games_directory, filename)
+        # print_list_to_file(file_path, prob_d)
 
     return games
 
 
-def print_to_file(file_path, target):
+def print_teams(teams):
+    sorted_teams = sorted(teams)
+    for team in sorted_teams:
+        print u'{' + u'"name":"{}", "alias": ""'.format(team) + u'},'
+
+
+def find_teams(games):
+    teams = set()
+    for game in games:
+        teams.add(game["teamA"])
+        teams.add(game["teamB"])
+
+    return teams
+
+
+def print_list_to_file(file_path, target):
     with open(file_path, 'w') as file:
         content = ''
         for index in range(0, len(target)):
