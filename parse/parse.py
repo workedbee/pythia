@@ -1,6 +1,6 @@
+import datetime
 import json
 import locale
-import datetime
 
 
 def get_team_converter(file_name):
@@ -55,6 +55,7 @@ def parse_liga_stavok_html(data):
         counter = counter + 1
 
     return games
+
 
 def parse_team_draft(draft):
     parts = draft.split('>')
