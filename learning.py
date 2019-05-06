@@ -48,12 +48,14 @@ def main():
         game_id_to_graph[key + '_a'] = normalize(win_a)
         game_id_to_graph[key + '_b'] = normalize(win_b)
 
-    x = [-10 + i * 0.2 for i in range(0, 100)]
-    y = np.sin(x)
-    plt.plot(x, y, marker='x')
-
     k = 0
 
+
+def normalize(values):
+    max_value = max(values)
+    if max_value == 0.:
+        return list
+    return [x/max_value for x in values]
 
 if __name__ == "__main__":
     main()
