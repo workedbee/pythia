@@ -1,8 +1,5 @@
 import locale
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 from games import load, split_games
 from history import load_history_dict
 
@@ -22,8 +19,8 @@ def build_csv():
         feature_team_a = extract_feature(feature_id, 0)
         feature_team_b = extract_feature(feature_id, 1)
 
-        features.insert(feature_team_a)
-        features.insert(feature_team_b)
+        features.append(feature_team_a)
+        features.append(feature_team_b)
 
 
 def extract_feature(id, team_idx):
@@ -56,6 +53,7 @@ def normalize(values):
     if max_value == 0.:
         return list
     return [x/max_value for x in values]
+
 
 if __name__ == "__main__":
     main()
