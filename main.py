@@ -15,6 +15,7 @@ from http import load_html_page
 from merge import print_list_to_file
 from parse.marathon_bet_ru import parse_bet_html
 from parse.parse import parse_liga_stavok_html
+from utils import load_aliases
 
 work_directory = path.dirname(path.abspath(__file__))
 games_directory = path.join(work_directory, "games")
@@ -37,51 +38,39 @@ def main():
     odds = get_marathon_odds()
 
     k = 0
-    # games = enrich_games(games)
-    # teams = extract_teams(games)
-    #
-    # statistics_by_team = generate_statistics_by_team(teams, games)
-    # enrich_by_series(statistics_by_team, games)
-    #
-    # all_teams_statistics = sorted(statistics_by_team.values(), key=lambda x: x["score"], reverse=True)
-    # print_team_statistic(all_teams_statistics)
-    #
-    # odds = load_odds()
-    # aliases = load_aliases(path.join(work_directory, 'data\\team_aliases.json'))
-    #
-    # investigate_suspicious2(games, odds, aliases)
+    games = enrich_games(games)
+    teams = extract_teams(games)
 
-    # series = list()
-    # for team_statistics in all_teams_statistics:
-    #     [series.append(seria) for seria in team_statistics["series"]]
-    #
-    # incomplete_series = list()
-    # for team_statistics in all_teams_statistics:
-    #     incomplete_series.append(team_statistics["incomplete_seria"])
-    #
-    # series = sorted(series, key=lambda x: x["games"][0], reverse=False)
-    # incomplete_series = sorted(incomplete_series, key=lambda x: x["games"][0], reverse=False)
-    #
-    # #investigate0(teams, games, series, statistics_by_team)
-    # investigate1(teams, games, series, statistics_by_team)
+    statistics_by_team = generate_statistics_by_team(teams, games)
+    enrich_by_series(statistics_by_team, games)
+
+    all_teams_statistics = sorted(statistics_by_team.values(), key=lambda x: x["score"], reverse=True)
+    print_team_statistic(all_teams_statistics)
+
+    odds = load_odds()
+    aliases = load_aliases(path.join(work_directory, 'data\\team_aliases.json'))
+
+    investigate_suspicious2(games, odds, aliases)
+
+    series = list()
+    for team_statistics in all_teams_statistics:
+        [series.append(seria) for seria in team_statistics["series"]]
+
+    incomplete_series = list()
+    for team_statistics in all_teams_statistics:
+        incomplete_series.append(team_statistics["incomplete_seria"])
+
+    series = sorted(series, key=lambda x: x["games"][0], reverse=False)
+    incomplete_series = sorted(incomplete_series, key=lambda x: x["games"][0], reverse=False)
+
+    #investigate0(teams, games, series, statistics_by_team)
+    investigate1(teams, games, series, statistics_by_team)
 
 
 def get_marathon_odds():
     data = load_html_page("https://www.marathonbet.ru/su/popular/Ice+Hockey/KHL/", {})
     odds = parse_bet_html(data)
     return enrich_odds(odds)
-
-
-def load_aliases(filename):
-    with open(filename, 'r') as raw_file:
-        aliases_data = raw_file.read().replace('\n', '')
-
-    json_aliases = json.loads(aliases_data)
-
-    aliases = dict()
-    for alias in json_aliases:
-        aliases[alias["name"]] = alias["alias"]
-    return aliases
 
 
 def print_teams(teams):

@@ -1,14 +1,11 @@
-import locale
-
 from games import load, split_games
 from history import load_history_dict
+from utils import load_aliases, translate_team_names
 
 MIN_GAMES_COUNT = 30
 
 
 def build_csv():
-    locale.setlocale(locale.LC_ALL, 'RUS')
-
     all_games = load()
     past_games, future_games = split_games(all_games)
 
@@ -30,25 +27,36 @@ def extract_feature(id, team_idx):
 
 
 def main():
-    history_dict = load_history_dict('./data/marathon_khl.json')
+    odds = load_history_dict('./data/marathon_khl.json').values()
 
     all_games = load()
-    past_games, future_games = split_games(all_games)
+    games, future_games = split_games(all_games)
 
-    game_id_to_graph = dict()
-    for key, value in history_dict.items():
-        if len(value['odds']) < MIN_GAMES_COUNT:
-            continue
+    team_aliases = load_aliases('./data/team_aliases.json')
 
-        recent_odds = value['odds'][-MIN_GAMES_COUNT:]
+    translate(games, odds, team_aliases)
+    #glue_games_and_odds(games, odds)
 
-        win_a = [x['winA'] for x in recent_odds]
-        win_b = [x['winB'] for x in recent_odds]
 
-        game_id_to_graph[key + '_a'] = normalize(win_a)
-        game_id_to_graph[key + '_b'] = normalize(win_b)
+def translate(games, odds, team_aliases):
+    for game in games:
+        translate_team_names(game, team_aliases)
+    for odd in odds:
+        translate_team_names(odd, team_aliases)
 
-    k = 0
+
+def glue_games_and_odds(games, odds):
+    for game in games:
+        odd = find_odd(odds, game['teamA'], game['teamB'], game['date'])
+        game['odds'] = odd
+    return
+
+
+def find_odd(odds, teamA, teamB, date):
+    for odd in odds:
+        if odd['teamA'] == teamA and odd['teamB'] == teamB:
+            return odd
+    return None
 
 
 def normalize(values):
