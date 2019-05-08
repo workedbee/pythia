@@ -30,7 +30,10 @@ def extract_feature(id, team_idx):
 
 
 def main():
-    history_dict = load_history_dict('marathon_khl.json')
+    history_dict = load_history_dict('./data/marathon_khl.json')
+
+    all_games = load()
+    past_games, future_games = split_games(all_games)
 
     game_id_to_graph = dict()
     for key, value in history_dict.items():
