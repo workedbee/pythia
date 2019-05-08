@@ -1,6 +1,7 @@
 from http import load_html_page
 from parse.sports_ru import parse_sports_ru_html
 
+
 def load():
     #khl_2016_season_id = '5735'
     #khl_2017_season_id = '6449'
@@ -10,10 +11,7 @@ def load():
 
     game_index = 0
     games = list()
-    #months = [8, 9, 10, 11, 12, 1, 2]
-    months = [8, 9, 10, 11, 12, 1, 2, 3]
-    months = [9]
-    #months = [10, 11, 12, 1, 2, 3, 4]
+    months = [9, 10, 11, 12, 1, 2]
     try:
         for month in months:
             parameters = {

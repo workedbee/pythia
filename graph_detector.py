@@ -2,10 +2,6 @@
 MIDDLE_LEFT = 0.3
 MIDDLE_RIGHT = 0.7
 
-END_BOUND = 0.8
-START_BOUND = 0.2
-
-
 GRAPH_TYPE_UNKNOWN = 0
 GRAPH_TYPE_INCREASING = 1
 GRAPH_TYPE_DECREASING = 2
@@ -38,13 +34,13 @@ def detect_graph_ext(y_line, recursive_call):
     max_index = get_max_index(y_line)
 
     if (first_value < last_value) \
-        and (abs_ascend_sum * 0.2 > abs_descend_sum) \
+        and (abs_ascend_sum * 0.2 >= abs_descend_sum) \
         and index_in_left(min_index, len(y_line)) \
         and index_in_right(max_index, len(y_line)):
         return GRAPH_TYPE_INCREASING
 
     if (first_value > last_value) \
-        and (abs_ascend_sum < abs_descend_sum * 0.2) \
+        and (abs_ascend_sum <= abs_descend_sum * 0.2) \
         and index_in_left(max_index, len(y_line)) \
         and index_in_right(min_index, len(y_line)):
         return GRAPH_TYPE_DECREASING
@@ -58,7 +54,7 @@ def detect_graph_ext(y_line, recursive_call):
         return GRAPH_TYPE_UP_AND_DOWN
 
     if index_in_middle(min_index, len(y_line)) \
-        and detect_graph_ext(y_line[0: min_index], True) == GRAPH_TYPE_DECREASING \
+        and detect_graph_ext(y_line[0: min_index+1], True) == GRAPH_TYPE_DECREASING \
         and detect_graph_ext(y_line[min_index: len(y_line)], True) == GRAPH_TYPE_INCREASING:
         return GRAPH_TYPE_DOWN_AND_UP
 
@@ -130,13 +126,20 @@ def generate_graph(index):
         return [0.1, 0.0, 0.2, 0.3, 0.4, 0.5, 0.6]
     if index == 6:
         return [0.5, 0.6, 0.4, 0.3, 0.2, 0.1, 0.0]
+    if index == 7:
+        return [0.0, 0.0, 0.0, 0.9, 0.9, 0.9, 0.9]
+    if index == 8:
+        return [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9747292418772564,
+                0.9747292418772564, 0.9891696750902528, 0.9891696750902528, 0.9891696750902528, 0.9891696750902528,
+                0.9891696750902528, 0.9927797833935018, 0.9927797833935018, 0.9927797833935018, 0.9927797833935018,
+                0.9927797833935018, 0.9927797833935018, 0.9927797833935018]
 
     return [0.0, 0.6]
 
 
 if __name__ == "__main__":
     # Some kind of test
-    for index in range(0, 8):
+    for index in range(0, 9):
         y_line = generate_graph(index)
         graph_type = detect_graph(y_line)
         print "Graph type: {}".format(graph_type)
