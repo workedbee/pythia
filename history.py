@@ -19,7 +19,7 @@ def get_path_in_script_dir(filename):
     return join(script_directory, filename)
 
 
-def save_history_dict(values, filename):
+def save_data(values, filename):
     with open(filename, 'w') as data_file:
         json.dump(values, data_file)
 
@@ -79,7 +79,7 @@ def get_leon_bets_history():
     values = sorted(values, key=lambda value: value["date"])
     print_history(values)
 
-    save_history_dict(values, filename_to_update)
+    save_data(values, filename_to_update)
 
 
 def load_from_files():

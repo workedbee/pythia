@@ -2,8 +2,14 @@ import json
 
 
 def translate_team_names(teams_structure, aliases_map):
-    teams_structure['teamA'] = aliases_map[teams_structure['teamA']]
-    teams_structure['teamB'] = aliases_map[teams_structure['teamB']]
+    if teams_structure['teamA'] in aliases_map:
+        teams_structure['teamA'] = aliases_map[teams_structure['teamA']]
+    else:
+        x = 0
+    if teams_structure['teamB'] in aliases_map:
+        teams_structure['teamB'] = aliases_map[teams_structure['teamB']]
+    else:
+        x = 0
 
 
 def load_aliases(filename):
