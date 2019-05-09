@@ -1,5 +1,7 @@
+from copy import deepcopy
+
 from games import load, split_games
-from history import load_history_dict
+from history import load_json, save_data
 from utils import load_aliases, translate_team_names
 
 MIN_GAMES_COUNT = 30
@@ -27,36 +29,53 @@ def extract_feature(id, team_idx):
 
 
 def main():
-    odds = load_history_dict('./data/marathon_khl.json').values()
+    games = load_json('./data/khl_enriched_games_2018.json')
 
-    all_games = load()
-    games, future_games = split_games(all_games)
 
+def prepare():
     team_aliases = load_aliases('./data/team_aliases.json')
+    odds = load_json('./data/khl_odds_2018_translated.json')
+    games = load_json('./data/khl_games_2018_translated.json')
 
-    translate(games, odds, team_aliases)
-    #glue_games_and_odds(games, odds)
+    featured_data = glue_games_and_odds(games, odds)
+    for data in featured_data:
+        print data
+
+    save_data(featured_data, './data/khl_enriched_games_2018.json')
 
 
-def translate(games, odds, team_aliases):
-    for game in games:
-        translate_team_names(game, team_aliases)
-    for odd in odds:
-        translate_team_names(odd, team_aliases)
+def transform_date(date):
+    date_time = date.split(' ')
+    y_m_d = date_time[0].split('-')
+    return '{}.{}.{}'.format(y_m_d[2], y_m_d[1], y_m_d[0])
+
+
+def translate(items_list, team_aliases):
+    for item in items_list:
+        translate_team_names(item, team_aliases)
 
 
 def glue_games_and_odds(games, odds):
+    result = []
     for game in games:
-        odd = find_odd(odds, game['teamA'], game['teamB'], game['date'])
-        game['odds'] = odd
-    return
+        found_odds = find_odds(odds, game['teamA'], game['teamB'], game['date'])
+        if len(found_odds) != 1:
+            print "Cannot match odd and game result"
+            continue
+        result_item = deepcopy(game)
+        result_item['odds'] = found_odds[0]['odds']
+        result.append(result_item)
+    return result
 
 
-def find_odd(odds, teamA, teamB, date):
+def find_odds(odds, teamA, teamB, date):
+    result = []
     for odd in odds:
-        if odd['teamA'] == teamA and odd['teamB'] == teamB:
-            return odd
-    return None
+        if odd['teamA'] == teamA \
+                and odd['teamB'] == teamB \
+                and odd['date'] == date:
+            result.append(odd)
+    return result
 
 
 def normalize(values):
