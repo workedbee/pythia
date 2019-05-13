@@ -1,6 +1,7 @@
 from graph_detector import GRAPH_TYPE_INCREASING, GRAPH_TYPE_DECREASING, GRAPH_TYPE_DOWN_AND_UP, GRAPH_TYPE_UP_AND_DOWN
 from graph_detector import detect_graph
 from history import load_json, save_data
+from learning import normalize
 
 MIN_ODDS_COUNT = 30
 ODDS_ROW_END_NOT_TAKEN = 2
@@ -38,6 +39,8 @@ def build_feature(game, team_a):
     recent_odds = game['odds'][-MIN_ODDS_COUNT:-ODDS_ROW_END_NOT_TAKEN]
     graph = [x[team_win_name] for x in recent_odds]
     graph_type = detect_graph(graph)
+    normalized_graph = normalize(graph)
+    first_odd = normalized_graph[0]
 
     feature = list()
     # 1. last odd coefficient
@@ -50,6 +53,12 @@ def build_feature(game, team_a):
     feature.append(1 if graph_type == GRAPH_TYPE_UP_AND_DOWN else 0)
     # 5. is graph falls down and grows up
     feature.append(1 if graph_type == GRAPH_TYPE_DOWN_AND_UP else 0)
+    # 6. max/first odd ratio
+    max_odd = max(normalized_graph)
+    feature.append(max_odd/first_odd if first_odd != 0. else 0.)
+    # 7. min/first odd ratio
+    min_odd = min(normalized_graph)
+    feature.append(min_odd/first_odd if first_odd != 0. else 0.)
 
     return feature
 
