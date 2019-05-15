@@ -72,5 +72,6 @@ def team_b_win_game(game):
     team_b_win = not game['overtime'] and (game['scoreA'] < game['scoreB'])
     return 1 if team_b_win else 0
 
+
 if __name__ == "__main__":
     main()

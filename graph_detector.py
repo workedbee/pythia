@@ -14,6 +14,8 @@ def detect_graph(y_line):
 
 
 def detect_graph_ext(y_line, recursive_call):
+    y_line = clean_endings(y_line)
+
     if not validate_graph(y_line):
         return GRAPH_TYPE_UNKNOWN
 
@@ -66,7 +68,7 @@ def index_in_left(index, length):
 
 
 def index_in_middle(index, length):
-    return (index >= length * MIDDLE_LEFT) and (index < length * MIDDLE_RIGHT)
+    return (index > 0) and (index < length-1)
 
 
 def index_in_right(index, length):
@@ -109,6 +111,38 @@ def get_max_index(list_x):
             max_index = index
 
     return max_index
+
+
+def clean_endings(y_line):
+    y_line = clean_begin_ending(y_line)
+    y_line = reverse_line(y_line)
+    y_line = clean_begin_ending(y_line)
+    return reverse_line(y_line)
+
+
+def reverse_line(y_line):
+    result = []
+    length = len(y_line)
+    for idx in range(0, length):
+        result.append(y_line[length - 1 - idx])
+
+    return result
+
+
+def clean_begin_ending(y_line):
+    length = len(y_line)
+
+    result = [y_line[0]]
+    begin_ending = True
+    for idx in range(1, length-1):
+        if begin_ending and y_line[idx] == y_line[0]:
+            continue
+        else:
+            begin_ending = False
+        result.append(y_line[idx])
+
+    result.append(y_line[length - 1])
+    return result
 
 
 def generate_graph(index):
