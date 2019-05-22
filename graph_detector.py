@@ -8,6 +8,20 @@ GRAPH_TYPE_DECREASING = 2
 GRAPH_TYPE_UP_AND_DOWN = 3
 GRAPH_TYPE_DOWN_AND_UP = 4
 
+GRAPH_ENDINGS_UNKNOWN = 0
+GRAPH_ENDINGS_CORRECTED = 1
+GRAPH_ENDINGS_LENGTH = 3
+
+
+def detect_ending(y_line):
+    if len(y_line) < GRAPH_ENDINGS_LENGTH:
+        return GRAPH_ENDINGS_UNKNOWN
+    ending = y_line[-GRAPH_ENDINGS_LENGTH:]
+
+    first_vector = ending[1] - ending[0]
+    second_vector = ending[2] - ending[1]
+    return GRAPH_ENDINGS_CORRECTED if (first_vector * second_vector) < 0 else GRAPH_ENDINGS_UNKNOWN
+
 
 def detect_graph(y_line):
     return detect_graph_ext(y_line, False)
